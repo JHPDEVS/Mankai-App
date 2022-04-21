@@ -41,7 +41,8 @@ public class LoginActivity extends AppCompatActivity {
 
     EditText emailEditText ;
     EditText passwordEditText;
-
+    TextView emailValidationText;
+    TextView passwordValidationText;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,6 +54,8 @@ public class LoginActivity extends AppCompatActivity {
                 .get(LoginViewModel.class);
         emailEditText = findViewById(R.id.email);
         passwordEditText = findViewById(R.id.password);
+        emailValidationText = findViewById(R.id.emailValidation);
+        passwordValidationText = findViewById(R.id.passwordValidation);
         final Button loginButton = binding.login;
         final ProgressBar loadingProgressBar = binding.loading;
         getToken(); // 토큰 불러옴
@@ -164,9 +167,16 @@ public class LoginActivity extends AppCompatActivity {
                         editor.putString("login_token",token);
                         editor.commit();
                         Toast.makeText(LoginActivity.this,"토큰 저장 완료",Toast.LENGTH_SHORT).show();
-                    } else {
-                        System.out.println("로그인 실패");
+                    } else if(statusCode == 400){
+                        System.out.println("validation error");
+                        emailValidationText.setText(jsonObject.getString("email"));
+                        passwordValidationText.setText(jsonObject.getString("password"));
                         System.out.println(response);
+                    } else if(statusCode == 401){
+                        Toast.makeText(LoginActivity.this,"아이디와 비밀번호를 확인해주세요", Toast.LENGTH_SHORT).show();
+                      
+                    } else {
+                        Toast.makeText(LoginActivity.this,"서버하고 연결실패", Toast.LENGTH_SHORT).show();
                     }
                 } catch(JSONException err) {
                     err.printStackTrace();
