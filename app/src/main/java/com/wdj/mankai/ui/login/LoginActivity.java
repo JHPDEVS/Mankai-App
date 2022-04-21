@@ -5,6 +5,7 @@ import android.app.Activity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 
@@ -30,6 +31,7 @@ import com.wdj.mankai.R;
 import com.wdj.mankai.ui.login.LoginViewModel;
 import com.wdj.mankai.ui.login.LoginViewModelFactory;
 import com.wdj.mankai.databinding.ActivityLoginBinding;
+import com.wdj.mankai.ui.main.MainActivity;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -144,6 +146,8 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText(LoginActivity.this,"저장된 토큰이 없습니다 로그인해주세요 " ,Toast.LENGTH_SHORT).show();
         }else {
             Toast.makeText(LoginActivity.this,"토근 불러오기 완료" + token,Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, MainActivity.class); // 여기에 클래스명 바꿔주면 됨
+            startActivity(intent); 
         }
 
     }
