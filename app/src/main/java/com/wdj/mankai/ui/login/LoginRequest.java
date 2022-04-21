@@ -15,11 +15,16 @@ public class LoginRequest extends StringRequest {
     private Map<String,String> map;
 
     public LoginRequest(String email , String password , Response.Listener<String> listener) {
-        super(Method.POST,URL,listener,null);
+            super(Method.POST,URL,listener,null);
 
         map = new HashMap<>();
         map.put("email", email);
         map.put("password",password);
+    }
+
+    @Override
+    protected Map<String, String> getParams() throws AuthFailureError {
+        return map;
     }
 
 }

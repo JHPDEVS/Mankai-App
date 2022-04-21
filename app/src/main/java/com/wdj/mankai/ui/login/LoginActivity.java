@@ -5,6 +5,7 @@ import android.app.Activity;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
@@ -22,15 +23,24 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.toolbox.Volley;
 import com.wdj.mankai.R;
 import com.wdj.mankai.ui.login.LoginViewModel;
 import com.wdj.mankai.ui.login.LoginViewModelFactory;
 import com.wdj.mankai.databinding.ActivityLoginBinding;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class LoginActivity extends AppCompatActivity {
 
     private LoginViewModel loginViewModel;
     private ActivityLoginBinding binding;
+
+    EditText emailEditText ;
+    EditText passwordEditText;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -41,12 +51,11 @@ public class LoginActivity extends AppCompatActivity {
 
         loginViewModel = new ViewModelProvider(this, new LoginViewModelFactory())
                 .get(LoginViewModel.class);
-
-        final EditText usernameEditText = binding.username;
-        final EditText passwordEditText = binding.password;
+        emailEditText = findViewById(R.id.email);
+        passwordEditText = findViewById(R.id.password);
         final Button loginButton = binding.login;
         final ProgressBar loadingProgressBar = binding.loading;
-
+        getToken(); // 토큰 불러옴
         loginViewModel.getLoginFormState().observe(this, new Observer<LoginFormState>() {
             @Override
             public void onChanged(@Nullable LoginFormState loginFormState) {
@@ -55,7 +64,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
                 loginButton.setEnabled(loginFormState.isDataValid());
                 if (loginFormState.getUsernameError() != null) {
-                    usernameEditText.setError(getString(loginFormState.getUsernameError()));
+                    emailEditText.setError(getString(loginFormState.getUsernameError()));
                 }
                 if (loginFormState.getPasswordError() != null) {
                     passwordEditText.setError(getString(loginFormState.getPasswordError()));
@@ -79,9 +88,11 @@ public class LoginActivity extends AppCompatActivity {
                 setResult(Activity.RESULT_OK);
 
                 //Complete and destroy login activity once successful
-                finish();
+                System.out.println(emailEditText.getText().toString() + passwordEditText.getText().toString());
             }
         });
+
+
 
         TextWatcher afterTextChangedListener = new TextWatcher() {
             @Override
@@ -92,22 +103,23 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 // ignore
+                System.out.println(emailEditText.getText().toString() + passwordEditText.getText().toString());
             }
 
             @Override
             public void afterTextChanged(Editable s) {
-                loginViewModel.loginDataChanged(usernameEditText.getText().toString(),
+                loginViewModel.loginDataChanged(emailEditText.getText().toString(),
                         passwordEditText.getText().toString());
             }
         };
-        usernameEditText.addTextChangedListener(afterTextChangedListener);
+        emailEditText.addTextChangedListener(afterTextChangedListener);
         passwordEditText.addTextChangedListener(afterTextChangedListener);
         passwordEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
 
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_DONE) {
-                    loginViewModel.login(usernameEditText.getText().toString(),
+                    loginViewModel.login(emailEditText.getText().toString(),
                             passwordEditText.getText().toString());
                 }
                 return false;
@@ -118,12 +130,53 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 loadingProgressBar.setVisibility(View.VISIBLE);
-                loginViewModel.login(usernameEditText.getText().toString(),
-                        passwordEditText.getText().toString());
+                login();
             }
         });
     }
+    private void getToken() {
+        SharedPreferences sharedPreferences= getSharedPreferences("login_token", MODE_PRIVATE);
+        String token = sharedPreferences.getString("login_token","");
+        if(token.isEmpty()) {
+            Toast.makeText(LoginActivity.this,"저장된 토큰이 없습니다 로그인해주세요 " ,Toast.LENGTH_SHORT).show();
+        }else {
+            Toast.makeText(LoginActivity.this,"토근 불러오기 완료" + token,Toast.LENGTH_SHORT).show();
+        }
 
+    }
+    private void login() {
+        String email = emailEditText.getText().toString();
+        String password = passwordEditText.getText().toString();
+        Response.Listener<String> responseListener = new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                try {
+                    JSONObject jsonObject = new JSONObject(response);
+                    int statusCode = jsonObject.getInt("status");
+                    if(statusCode == 200) {
+                        System.out.println("로그인 성공");
+                        String token = jsonObject.getString("token");
+                        String toastMessage = "로그인 성공 토큰 값 : " + token;
+                        Toast.makeText(LoginActivity.this,toastMessage, Toast.LENGTH_SHORT).show();
+
+                        SharedPreferences sharedPreferences = getSharedPreferences("login_token",MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putString("login_token",token);
+                        editor.commit();
+                        Toast.makeText(LoginActivity.this,"토큰 저장 완료",Toast.LENGTH_SHORT).show();
+                    } else {
+                        System.out.println("로그인 실패");
+                        System.out.println(response);
+                    }
+                } catch(JSONException err) {
+                    err.printStackTrace();
+                }
+            }
+        };
+        LoginRequest loginRequest = new LoginRequest(email,password,responseListener);
+        RequestQueue queue = Volley.newRequestQueue(LoginActivity.this);
+        queue.add(loginRequest);
+    }
     private void updateUiWithUser(LoggedInUserView model) {
         String welcome = getString(R.string.welcome) + model.getDisplayName();
         // TODO : initiate successful logged in experience
@@ -133,4 +186,6 @@ public class LoginActivity extends AppCompatActivity {
     private void showLoginFailed(@StringRes Integer errorString) {
         Toast.makeText(getApplicationContext(), errorString, Toast.LENGTH_SHORT).show();
     }
+
+
 }
