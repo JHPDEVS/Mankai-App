@@ -1,6 +1,7 @@
 package com.wdj.mankai.ui.main;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -11,6 +12,7 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.PermissionRequest;
@@ -34,6 +36,7 @@ import java.util.Map;
 
 public class VideoActivity extends AppCompatActivity {
     WebView mWebView;
+    AppCompatButton button;
     private Map<String,String> map;
     private static final int MY_PERMISSIONS_REQUEST_CAMERA = 100;
     private static final int MY_PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
@@ -45,6 +48,7 @@ public class VideoActivity extends AppCompatActivity {
         String token = sharedPreferences.getString("login_token","");
         askForPermissions();
         mWebView = findViewById(R.id.webview);
+
         mWebView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(PermissionRequest request) {
@@ -52,6 +56,7 @@ public class VideoActivity extends AppCompatActivity {
             }
 
         });
+
 
         mWebView.setWebViewClient(new WebViewClient() {
             // localStorage 설정
@@ -68,13 +73,17 @@ public class VideoActivity extends AppCompatActivity {
             }
 
         });
+
         WebSettings webSettings = mWebView.getSettings();
         webSettings.setDomStorageEnabled(true);
+
+        webSettings.setMediaPlaybackRequiresUserGesture(false); // God
         webSettings.setJavaScriptEnabled(true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             WebView.setWebContentsDebuggingEnabled(true); // 웹뷰의 디버깅 모드 활성화
             webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
+
 
 
 
